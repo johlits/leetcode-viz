@@ -1,104 +1,91 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.8.5/+esm';
+import BaseVisualizer from './base.js';
 
-class TreeVisualizer {
+class TreeVisualizer extends BaseVisualizer {
     constructor(containerId, data) {
-        this.container = d3.select(`#${containerId}`);
-        this.data = data;
-        this.margin = { top: 60, right: 90, bottom: 30, left: 90 };
-        this.duration = 750;
-        this.nodeRadius = 20;
-        this.init();
+        super(containerId, data);
+        this.margin = { top: 20, right: 20, bottom: 20, left: 20 };
+        this.nodeRadius = 18;
     }
 
-    init() {
-        // Clear previous visualization
-        this.container.selectAll('*').remove();
+    render() {
+        if (!this.svg) return;
+        const rootSel = d3.select(this.svg);
+        rootSel.selectAll('*').remove();
 
-        const containerNode = this.container.node();
-        const width = containerNode.clientWidth - this.margin.left - this.margin.right;
-        const height = 500;
+        const { width, height: containerH } = this.container.getBoundingClientRect();
+        const height = Math.max(360, containerH || 500);
 
-        // Create SVG
-        this.svg = this.container.append('svg')
-            .attr('width', '100%')
-            .attr('height', height + this.margin.top + this.margin.bottom)
-            .append('g')
-            .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
+        // Set svg size
+        this.svg.setAttribute('width', '100%');
+        this.svg.setAttribute('height', String(height));
+
+        // inner group that will be zoomed
+        const inner = rootSel.append('g')
+            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+
+        const innerWidth = Math.max(200, width - this.margin.left - this.margin.right);
+        const innerHeight = Math.max(200, height - this.margin.top - this.margin.bottom - 40);
 
         // Create tree layout
-        this.treeLayout = d3.tree()
-            .size([width, height - 100]);
+        const treeLayout = d3.tree().size([innerWidth, innerHeight]);
 
-        // Convert data to hierarchy
-        this.root = d3.hierarchy(this.data, d => {
+        // Convert to hierarchy (binary)
+        const hierarchy = d3.hierarchy(this.data, d => {
             const children = [];
-            if (d.left) children.push(d.left);
-            if (d.right) children.push(d.right);
-            return children;
+            if (d && d.left) children.push(d.left);
+            if (d && d.right) children.push(d.right);
+            return children.length ? children : null;
         });
 
-        // Calculate tree layout
-        this.treeData = this.treeLayout(this.root);
+        const treeData = treeLayout(hierarchy);
+        const nodes = treeData.descendants();
+        const links = treeData.links();
 
-        // Find all nodes
-        this.nodes = this.treeData.descendants();
-        this.links = this.treeData.links();
-
-        // Draw links
-        this.svg.selectAll('.link')
-            .data(this.links, d => d.target.data.id || d.target.data.value)
+        // Links
+        inner.selectAll('.link')
+            .data(links)
             .enter()
             .append('path')
             .attr('class', 'link')
-            .attr('d', d3.linkVertical()
-                .x(d => d.x)
-                .y(d => d.y)
-            )
-            .style('fill', 'none')
-            .style('stroke', 'var(--text-secondary)')
-            .style('stroke-width', '2px');
+            .attr('d', d3.linkVertical().x(d => d.x).y(d => d.y))
+            .attr('fill', 'none')
+            .attr('stroke', 'var(--text-secondary)')
+            .attr('stroke-width', 1.5);
 
-        // Create node groups
-        const node = this.svg.selectAll('.node')
-            .data(this.nodes, d => d.data.id || d.data.value)
+        // Nodes
+        const node = inner.selectAll('.node')
+            .data(nodes)
             .enter()
             .append('g')
             .attr('class', 'node')
             .attr('transform', d => `translate(${d.x},${d.y})`);
 
-        // Add circles to nodes
         node.append('circle')
             .attr('r', this.nodeRadius)
-            .style('fill', 'var(--accent)')
-            .style('stroke', 'var(--accent-hover)')
-            .style('stroke-width', '2px');
+            .attr('fill', 'var(--accent)')
+            .attr('stroke', 'var(--accent-hover)')
+            .attr('stroke-width', 1.5);
 
-        // Add node text
         node.append('text')
             .attr('dy', '.35em')
             .attr('text-anchor', 'middle')
             .style('fill', 'white')
-            .text(d => d.data.value);
+            .text(d => d.data && (d.data.value ?? d.data.val ?? d.data.key ?? ''));
 
-        // Add title
-        this.container.append('h3')
-            .text('Binary Tree Visualization')
-            .style('text-align', 'center')
-            .style('color', 'var(--text-primary)');
-
-        // Add zoom behavior
-        this.zoom = d3.zoom()
+        // Zoom behavior operates on inner group
+        const zoom = d3.zoom()
             .scaleExtent([0.5, 2])
             .on('zoom', (event) => {
-                this.svg.attr('transform', `translate(${this.margin.left + event.transform.x},${this.margin.top + event.transform.y})scale(${event.transform.k})`);
+                inner.attr('transform', `translate(${this.margin.left + event.transform.x},${this.margin.top + event.transform.y}) scale(${event.transform.k})`);
             });
 
-        this.container.call(this.zoom);
+        d3.select(this.svg).call(zoom);
     }
 
     update(newData) {
         this.data = newData;
-        this.init();
+        this.render();
     }
 }
 

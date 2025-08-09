@@ -1,14 +1,14 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.8.5/+esm';
+import BaseVisualizer from './base.js';
 
-class LinkedListVisualizer {
+class LinkedListVisualizer extends BaseVisualizer {
     constructor(containerId, data) {
-        this.container = d3.select(`#${containerId}`);
-        this.data = this.processData(data);
-        this.margin = { top: 60, right: 20, bottom: 60, left: 20 };
+        super(containerId, data);
+        this.margin = { top: 20, right: 16, bottom: 20, left: 16 };
         this.nodeWidth = 80;
         this.nodeHeight = 40;
         this.spacing = 120;
-        this.init();
+        this.data = this.processData(data);
     }
 
     processData(data) {
@@ -42,32 +42,37 @@ class LinkedListVisualizer {
         return [];
     }
 
-    init() {
-        // Clear previous visualization
-        this.container.selectAll('*').remove();
+    render() {
+        if (!this.svg) return;
+        const root = d3.select(this.svg);
+        root.selectAll('*').remove();
 
-        if (!this.data || this.data.length === 0) {
-            this.showEmptyState();
+        const data = this.data || [];
+        if (!data.length) {
+            // empty state
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.style.padding = '24px';
+            empty.innerHTML = '<h3>No Data to Visualize</h3><p>Please provide valid linked list data</p>';
+            // Replace SVG with empty message temporarily
+            this.svg.replaceWith(empty);
+            this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            empty.replaceWith(this.svg);
             return;
         }
 
-        const containerNode = this.container.node();
-        const totalWidth = Math.max(this.data.length * this.spacing + this.margin.left + this.margin.right, containerNode.clientWidth);
-        const height = 200;
+        const height = 180;
+        const totalWidth = Math.max(data.length * this.spacing + this.margin.left + this.margin.right, 400);
+        this.svg.setAttribute('width', '100%');
+        this.svg.setAttribute('height', String(height));
+        this.svg.setAttribute('viewBox', `0 0 ${totalWidth} ${height}`);
 
-        // Create SVG
-        this.svg = this.container.append('svg')
-            .attr('width', '100%')
-            .attr('height', height)
-            .attr('viewBox', `0 0 ${totalWidth} ${height}`)
-            .style('overflow-x', 'auto');
+        const g = root.append('g')
+            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
-        const g = this.svg.append('g')
-            .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
-
-        // Create nodes
+        // Groups per node
         const nodeGroups = g.selectAll('.node-group')
-            .data(this.data)
+            .data(data)
             .enter()
             .append('g')
             .attr('class', 'node-group')
@@ -78,24 +83,15 @@ class LinkedListVisualizer {
             .attr('class', 'll-node')
             .attr('width', this.nodeWidth)
             .attr('height', this.nodeHeight)
-            .attr('rx', 5)
+            .attr('rx', 6)
             .attr('fill', 'var(--accent)')
             .attr('stroke', 'var(--accent-hover)')
-            .attr('stroke-width', 2)
-            .style('cursor', 'pointer')
-            .on('mouseover', function(event, d) {
-                d3.select(this)
-                    .transition()
-                    .duration(200)
-                    .attr('fill', 'var(--accent-hover)')
-                    .attr('transform', 'scale(1.05)');
+            .attr('stroke-width', 1.5)
+            .on('mouseover', function () {
+                d3.select(this).style('filter', 'brightness(1.05)');
             })
-            .on('mouseout', function(event, d) {
-                d3.select(this)
-                    .transition()
-                    .duration(200)
-                    .attr('fill', 'var(--accent)')
-                    .attr('transform', 'scale(1)');
+            .on('mouseout', function () {
+                d3.select(this).style('filter', null);
             });
 
         // Node values
@@ -114,26 +110,14 @@ class LinkedListVisualizer {
         nodeGroups.append('text')
             .attr('class', 'll-index')
             .attr('x', this.nodeWidth / 2)
-            .attr('y', -10)
+            .attr('y', -8)
             .attr('text-anchor', 'middle')
             .style('fill', 'var(--text-secondary)')
             .style('font-size', '12px')
             .text(d => `[${d.index}]`);
 
-        // Arrows
-        nodeGroups.filter(d => d.next !== null)
-            .append('line')
-            .attr('class', 'll-arrow')
-            .attr('x1', this.nodeWidth)
-            .attr('y1', this.nodeHeight / 2)
-            .attr('x2', this.spacing - 10)
-            .attr('y2', this.nodeHeight / 2)
-            .attr('stroke', 'var(--text-secondary)')
-            .attr('stroke-width', 2)
-            .attr('marker-end', 'url(#arrow)');
-
-        // Arrow markers
-        const defs = this.svg.append('defs');
+        // Arrow marker
+        const defs = root.append('defs');
         defs.append('marker')
             .attr('id', 'arrow')
             .attr('viewBox', '0 -5 10 10')
@@ -146,53 +130,39 @@ class LinkedListVisualizer {
             .attr('d', 'M0,-5L10,0L0,5')
             .attr('fill', 'var(--text-secondary)');
 
-        // NULL indicator for the last node
-        const lastNode = nodeGroups.filter((d, i) => i === this.data.length - 1);
+        // Links
+        nodeGroups.filter(d => d.next !== null)
+            .append('line')
+            .attr('class', 'll-arrow')
+            .attr('x1', this.nodeWidth)
+            .attr('y1', this.nodeHeight / 2)
+            .attr('x2', this.spacing - 10)
+            .attr('y2', this.nodeHeight / 2)
+            .attr('stroke', 'var(--text-secondary)')
+            .attr('stroke-width', 1.5)
+            .attr('marker-end', 'url(#arrow)');
+
+        // NULL indicator
+        const lastNode = nodeGroups.filter((d, i) => i === data.length - 1);
         lastNode.append('text')
             .attr('x', this.nodeWidth + 20)
             .attr('y', this.nodeHeight / 2)
             .attr('dy', '0.35em')
             .style('fill', 'var(--text-secondary)')
             .style('font-style', 'italic')
+            .style('font-size', '12px')
             .text('NULL');
-
-        // Add title
-        this.container.insert('h3', 'svg')
-            .text('Linked List Visualization')
-            .style('text-align', 'center')
-            .style('color', 'var(--text-primary)')
-            .style('margin-bottom', '10px');
-
-        // Add info
-        this.container.append('div')
-            .attr('class', 'visualization-info')
-            .style('text-align', 'center')
-            .style('color', 'var(--text-secondary)')
-            .style('font-size', '14px')
-            .style('margin-top', '10px')
-            .html(`<strong>Nodes:</strong> ${this.data.length} | <strong>Operations:</strong> Traverse, Insert, Delete`);
     }
 
-    showEmptyState() {
-        this.container.append('div')
-            .attr('class', 'empty-state')
-            .style('text-align', 'center')
-            .style('padding', '40px')
-            .style('color', 'var(--text-secondary)')
-            .html(`
-                <h3>No Data to Visualize</h3>
-                <p>Please provide valid linked list data</p>
-                <small>Format: [1, 2, 3, 4] or {"value": 1, "next": {"value": 2, "next": null}}</small>
-            `);
-    }
+    showEmptyState() { /* handled in render() for consistency */ }
 
     update(newData) {
         this.data = this.processData(newData);
-        this.init();
+        this.render();
     }
 
     destroy() {
-        this.container.selectAll('*').remove();
+        super.destroy();
     }
 }
 

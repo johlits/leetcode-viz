@@ -408,22 +408,27 @@ class DataVisualizerApp {
         try {
             const data = parseData(content);
             const detected = detectDataType(data);
-            const type = this.forcedType !== 'auto' ? this.forcedType : detected;
-            const validation = validateDataStructure(data, type);
-            
-            // Update data type
             const forced = (this.forcedType !== 'auto');
+            const type = forced ? this.forcedType : detected;
+            // Validate against detected structure to avoid false negatives when forcing a different visualizer
+            const validationDetected = validateDataStructure(data, detected);
+
+            // Update data type label
             document.getElementById('data-type-indicator').textContent = `${type.charAt(0).toUpperCase() + type.slice(1)}${forced ? ' (Forced)' : ''}`;
-            
+
             // Update validation status
             const statusEl = document.getElementById('validation-status');
-            if (validation.isValid) {
+            if (validationDetected.isValid) {
                 statusEl.textContent = '✓ Valid';
                 statusEl.className = 'status-indicator valid';
+                statusEl.removeAttribute('title');
+                if (forced && type !== detected) {
+                    statusEl.title = `Forced type (${type}) differs from detected (${detected}).`;
+                }
             } else {
                 statusEl.textContent = '⚠ Invalid';
                 statusEl.className = 'status-indicator invalid';
-                statusEl.title = validation.errors.join(', ');
+                statusEl.title = validationDetected.errors.join(', ');
             }
         } catch (error) {
             document.getElementById('data-type-indicator').textContent = 'Unknown';

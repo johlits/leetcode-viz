@@ -1,13 +1,13 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.8.5/+esm';
+import BaseVisualizer from './base.js';
 
-class HashTableVisualizer {
+class HashTableVisualizer extends BaseVisualizer {
     constructor(containerId, data) {
-        this.container = d3.select(`#${containerId}`);
+        super(containerId, []);
         this.data = this.processData(data);
-        this.margin = { top: 60, right: 20, bottom: 40, left: 60 };
+        this.margin = { top: 20, right: 20, bottom: 20, left: 60 };
         this.bucketHeight = 40;
         this.bucketWidth = 200;
-        this.init();
     }
 
     processData(data) {
@@ -41,31 +41,36 @@ class HashTableVisualizer {
         return hash;
     }
 
-    init() {
-        // Clear previous visualization
-        this.container.selectAll('*').remove();
+    render() {
+        if (!this.svg) return;
+        const root = d3.select(this.svg);
+        root.selectAll('*').remove();
+
+        const { width } = this.container.getBoundingClientRect();
+        const innerWidth = Math.max(320, width - this.margin.left - this.margin.right);
+
+        const tableSize = Math.max(10, Math.ceil((this.data?.length || 0) * 1.3));
+        const totalHeight = tableSize * (this.bucketHeight + 5) + this.margin.top + this.margin.bottom;
+
+        this.svg.setAttribute('width', '100%');
+        this.svg.setAttribute('height', String(Math.max(200, totalHeight)));
+
+        const g = root.append('g')
+            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
         if (!this.data || this.data.length === 0) {
-            this.showEmptyState();
+            g.append('text')
+                .attr('x', innerWidth / 2)
+                .attr('y', 100)
+                .attr('text-anchor', 'middle')
+                .attr('fill', 'var(--text-secondary)')
+                .style('font-size', '14px')
+                .text('No hash table data to visualize');
             return;
         }
 
-        const tableSize = Math.max(10, Math.ceil(this.data.length * 1.3)); // Load factor ~0.75
         const buckets = this.createBuckets(tableSize);
-        
-        const containerNode = this.container.node();
-        const width = containerNode.clientWidth - this.margin.left - this.margin.right;
-        const height = tableSize * (this.bucketHeight + 5) + this.margin.top + this.margin.bottom;
-
-        // Create SVG
-        this.svg = this.container.append('svg')
-            .attr('width', '100%')
-            .attr('height', height)
-            .append('g')
-            .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
-
-        this.createVisualization(buckets, width, tableSize);
-        this.addTitleAndInfo(tableSize);
+        this.createVisualization(g, buckets, innerWidth, tableSize);
     }
 
     createBuckets(tableSize) {
@@ -80,8 +85,8 @@ class HashTableVisualizer {
         return buckets;
     }
 
-    createVisualization(buckets, width, tableSize) {
-        const bucketGroups = this.svg.selectAll('.bucket-group')
+    createVisualization(g, buckets, width, tableSize) {
+        const bucketGroups = g.selectAll('.bucket-group')
             .data(buckets)
             .enter()
             .append('g')
@@ -198,7 +203,7 @@ class HashTableVisualizer {
             .attr('marker-end', 'url(#chain-arrow-marker)');
 
         // Arrow marker for chains
-        const defs = this.svg.append('defs');
+        const defs = g.append('defs');
         defs.append('marker')
             .attr('id', 'chain-arrow-marker')
             .attr('viewBox', '0 -5 10 10')
@@ -212,83 +217,13 @@ class HashTableVisualizer {
             .attr('fill', 'var(--text-secondary)');
     }
 
-    addTitleAndInfo(tableSize) {
-        const collisions = this.data.length - new Set(this.data.map(item => this.simpleHash(item.key, tableSize))).size;
-        const loadFactor = (this.data.length / tableSize).toFixed(2);
-        
-        this.container.insert('h3', 'svg')
-            .text('Hash Table Visualization')
-            .style('text-align', 'center')
-            .style('color', 'var(--text-primary)')
-            .style('margin-bottom', '10px');
-
-        this.container.append('div')
-            .attr('class', 'visualization-info')
-            .style('text-align', 'center')
-            .style('color', 'var(--text-secondary)')
-            .style('font-size', '14px')
-            .style('margin-top', '10px')
-            .html(`
-                <strong>Items:</strong> ${this.data.length} | 
-                <strong>Buckets:</strong> ${tableSize} | 
-                <strong>Load Factor:</strong> ${loadFactor} | 
-                <strong>Collisions:</strong> <span style="color: ${collisions > 0 ? 'var(--error)' : 'var(--success)'}">${collisions}</span>
-            `);
-
-        // Add legend
-        const legend = this.container.append('div')
-            .attr('class', 'hash-legend')
-            .style('display', 'flex')
-            .style('justify-content', 'center')
-            .style('gap', '20px')
-            .style('margin-top', '10px')
-            .style('font-size', '12px');
-
-        const legendItems = [
-            { color: 'var(--bg-tertiary)', label: 'Empty' },
-            { color: 'var(--accent-light)', label: 'Occupied' },
-            { color: 'var(--error)', label: 'Collisions' }
-        ];
-
-        legendItems.forEach(item => {
-            const legendItem = legend.append('div')
-                .style('display', 'flex')
-                .style('align-items', 'center')
-                .style('gap', '5px');
-
-            legendItem.append('div')
-                .style('width', '12px')
-                .style('height', '12px')
-                .style('background-color', item.color)
-                .style('border', '1px solid var(--border)')
-                .style('border-radius', '2px');
-
-            legendItem.append('span')
-                .style('color', 'var(--text-secondary)')
-                .text(item.label);
-        });
-    }
-
-    showEmptyState() {
-        this.container.append('div')
-            .attr('class', 'empty-state')
-            .style('text-align', 'center')
-            .style('padding', '40px')
-            .style('color', 'var(--text-secondary)')
-            .html(`
-                <h3>No Data to Visualize</h3>
-                <p>Please provide valid hash table data</p>
-                <small>Format: {"key1": "value1", "key2": "value2"} or [["key1", "value1"], ["key2", "value2"]]</small>
-            `);
-    }
-
     update(newData) {
         this.data = this.processData(newData);
-        this.init();
+        this.render();
     }
 
     destroy() {
-        this.container.selectAll('*').remove();
+        super.destroy && super.destroy();
         d3.selectAll('.hash-tooltip').remove();
     }
 }
