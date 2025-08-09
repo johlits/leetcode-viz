@@ -180,17 +180,10 @@ class HeapVisualizer extends BaseVisualizer {
             .style('font-size', '10px')
             .text(d => `[${d.index}]`);
 
-        // Inline stats overlay (top-left)
+        // Stats overlay via BaseVisualizer helper (fixed, non-zooming)
         const prop = this.validateHeapProperty();
         const stats = `len: ${this.data.length}  ${prop.type}`;
-        g.append('text')
-            .attr('class', 'viz-stats')
-            .attr('x', 0)
-            .attr('y', -6)
-            .attr('text-anchor', 'start')
-            .style('fill', 'var(--text-secondary)')
-            .style('font-size', '12px')
-            .text(stats);
+        this.renderStatsOnOverlay(stats);
     }
 
     getNodeColor(index) {

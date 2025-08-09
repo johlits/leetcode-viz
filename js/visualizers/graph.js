@@ -106,16 +106,9 @@ class GraphVisualizer extends BaseVisualizer {
         });
         root.call(zoom);
 
-        // Inline stats overlay (top-left)
+        // Stats overlay via BaseVisualizer helper (fixed, non-zooming)
         const stats = `nodes: ${this.data.nodes.length}  edges: ${this.data.links.length}`;
-        g.append('text')
-            .attr('class', 'viz-stats')
-            .attr('x', 0)
-            .attr('y', -6)
-            .attr('text-anchor', 'start')
-            .style('fill', 'var(--text-secondary)')
-            .style('font-size', '12px')
-            .text(stats);
+        this.renderStatsOnOverlay(stats);
     }
 
     ticked() {

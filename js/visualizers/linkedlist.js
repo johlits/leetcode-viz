@@ -153,16 +153,9 @@ class LinkedListVisualizer extends BaseVisualizer {
             .style('font-size', '12px')
             .text('NULL');
 
-        // Inline stats overlay (top-left)
+        // Stats overlay via BaseVisualizer helper (fixed, non-zooming)
         const stats = `len: ${data.length}`;
-        g.append('text')
-            .attr('class', 'viz-stats')
-            .attr('x', 0)
-            .attr('y', -6)
-            .attr('text-anchor', 'start')
-            .style('fill', 'var(--text-secondary)')
-            .style('font-size', '12px')
-            .text(stats);
+        this.renderStatsOnOverlay(stats);
     }
 
     showEmptyState() { /* handled in render() for consistency */ }

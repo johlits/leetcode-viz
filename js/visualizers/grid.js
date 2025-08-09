@@ -6,12 +6,56 @@ export default class GridVisualizer {
     this.data = data;
     this.svg = null;
     this.g = null;
+    this.overlayG = null;
     this.resizeObserver = null;
 
     this.render = this.render.bind(this);
     this.resize = this.resize.bind(this);
 
     this.init();
+  }
+
+  // Local helper to render a pill-like stats overlay on a fixed overlay group
+  renderStatsOnOverlay(text, options = {}) {
+    if (!this.overlayG) return;
+    const { x = 12, y = 12 } = options;
+    // Clear previous
+    this.overlayG.selectAll('*').remove();
+
+    const g = this.overlayG.append('g')
+      .attr('class', 'viz-stats-pill')
+      .attr('transform', `translate(${x}, ${y})`);
+
+    const rect = g.append('rect')
+      .attr('rx', 4)
+      .attr('ry', 4)
+      .attr('fill', 'rgba(var(--bg-primary-rgb), 0.85)')
+      .attr('stroke', 'var(--border)');
+
+    const t = g.append('text')
+      .attr('x', 8)
+      .attr('y', 14)
+      .attr('text-anchor', 'start')
+      .attr('font-size', '12px')
+      .attr('font-family', 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace')
+      .attr('fill', 'var(--text-secondary)')
+      .text(text);
+
+    // Size rect to text
+    try {
+      const node = t.node();
+      if (node && node.getBBox) {
+        const bbox = node.getBBox();
+        const padX = 8;
+        const padY = 6;
+        rect.attr('x', 4)
+            .attr('y', 4)
+            .attr('width', bbox.width + padX + 4)
+            .attr('height', bbox.height + padY);
+      }
+    } catch (_) {
+      rect.attr('x', 4).attr('y', 4).attr('width', 140).attr('height', 22);
+    }
   }
 
   init() {
@@ -27,6 +71,10 @@ export default class GridVisualizer {
       .style('display', 'block');
 
     this.g = this.svg.append('g');
+    // Non-zoom overlay stays fixed for stats
+    this.overlayG = this.svg.append('g')
+      .attr('class', 'viz-overlay')
+      .style('pointer-events', 'none');
 
     this.render();
 
@@ -81,6 +129,8 @@ export default class GridVisualizer {
 
     this.svg.attr('width', width).attr('height', height);
     this.g.attr('transform', `translate(${(width - gridW) / 2}, ${(height - gridH) / 2})`);
+    // Position overlay near top-left padding
+    if (this.overlayG) this.overlayG.attr('transform', `translate(0, 0)`);
 
     const isNumeric = this.inferNumeric(matrix);
 
@@ -96,27 +146,13 @@ export default class GridVisualizer {
       const high = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#86a8e7';
       color = d3.scaleLinear().domain([min, (min+max)/2, max]).range([low, mid || '#ddd', high]);
 
-      // Inline stats overlay (top-left)
+      // Stats overlay via BaseVisualizer helper (fixed, non-zooming)
       const stats = `rows: ${rows}  cols: ${cols}  min: ${min}  max: ${max}`;
-      this.g.append('text')
-        .attr('class', 'viz-stats')
-        .attr('x', 0)
-        .attr('y', -6)
-        .attr('text-anchor', 'start')
-        .style('fill', 'var(--text-secondary)')
-        .style('font-size', '12px')
-        .text(stats);
+      this.renderStatsOnOverlay(stats);
     } else {
       // Non-numeric: just rows x cols
       const stats = `rows: ${rows}  cols: ${cols}`;
-      this.g.append('text')
-        .attr('class', 'viz-stats')
-        .attr('x', 0)
-        .attr('y', -6)
-        .attr('text-anchor', 'start')
-        .style('fill', 'var(--text-secondary)')
-        .style('font-size', '12px')
-        .text(stats);
+      this.renderStatsOnOverlay(stats);
     }
 
     // Data join
