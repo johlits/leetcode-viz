@@ -85,7 +85,7 @@ class GraphVisualizer extends BaseVisualizer {
         this.node.append('text')
             .attr('dy', '.35em')
             .attr('text-anchor', 'middle')
-            .style('fill', 'white')
+            .style('fill', 'var(--on-accent)')
             .text(d => d.name || d.id);
 
         // Force simulation
@@ -105,6 +105,17 @@ class GraphVisualizer extends BaseVisualizer {
             g.attr('transform', `translate(${this.margin.left + event.transform.x}, ${this.margin.top + event.transform.y}) scale(${event.transform.k})`);
         });
         root.call(zoom);
+
+        // Inline stats overlay (top-left)
+        const stats = `nodes: ${this.data.nodes.length}  edges: ${this.data.links.length}`;
+        g.append('text')
+            .attr('class', 'viz-stats')
+            .attr('x', 0)
+            .attr('y', -6)
+            .attr('text-anchor', 'start')
+            .style('fill', 'var(--text-secondary)')
+            .style('font-size', '12px')
+            .text(stats);
     }
 
     ticked() {

@@ -95,6 +95,28 @@ export default class GridVisualizer {
       const mid = getComputedStyle(document.documentElement).getPropertyValue('--bg-tertiary').trim() || '#e5e7eb';
       const high = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#86a8e7';
       color = d3.scaleLinear().domain([min, (min+max)/2, max]).range([low, mid || '#ddd', high]);
+
+      // Inline stats overlay (top-left)
+      const stats = `rows: ${rows}  cols: ${cols}  min: ${min}  max: ${max}`;
+      this.g.append('text')
+        .attr('class', 'viz-stats')
+        .attr('x', 0)
+        .attr('y', -6)
+        .attr('text-anchor', 'start')
+        .style('fill', 'var(--text-secondary)')
+        .style('font-size', '12px')
+        .text(stats);
+    } else {
+      // Non-numeric: just rows x cols
+      const stats = `rows: ${rows}  cols: ${cols}`;
+      this.g.append('text')
+        .attr('class', 'viz-stats')
+        .attr('x', 0)
+        .attr('y', -6)
+        .attr('text-anchor', 'start')
+        .style('fill', 'var(--text-secondary)')
+        .style('font-size', '12px')
+        .text(stats);
     }
 
     // Data join

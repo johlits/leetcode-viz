@@ -70,7 +70,7 @@ class TreeVisualizer extends BaseVisualizer {
         node.append('text')
             .attr('dy', '.35em')
             .attr('text-anchor', 'middle')
-            .style('fill', 'white')
+            .style('fill', 'var(--on-accent)')
             .text(d => d.data && (d.data.value ?? d.data.val ?? d.data.key ?? ''));
 
         // Zoom behavior operates on inner group
@@ -81,6 +81,17 @@ class TreeVisualizer extends BaseVisualizer {
             });
 
         d3.select(this.svg).call(zoom);
+
+        // Inline stats overlay (top-left)
+        const stats = `nodes: ${nodes.length}  edges: ${links.length}`;
+        inner.append('text')
+            .attr('class', 'viz-stats')
+            .attr('x', 0)
+            .attr('y', -6)
+            .attr('text-anchor', 'start')
+            .style('fill', 'var(--text-secondary)')
+            .style('font-size', '12px')
+            .text(stats);
     }
 
     update(newData) {

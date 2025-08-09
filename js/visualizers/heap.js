@@ -166,7 +166,7 @@ class HeapVisualizer extends BaseVisualizer {
             .attr('class', 'heap-text')
             .attr('dy', '0.35em')
             .attr('text-anchor', 'middle')
-            .style('fill', 'white')
+            .style('fill', 'var(--on-accent)')
             .style('font-size', '14px')
             .style('pointer-events', 'none')
             .text(d => d.value);
@@ -179,6 +179,18 @@ class HeapVisualizer extends BaseVisualizer {
             .style('fill', 'var(--text-secondary)')
             .style('font-size', '10px')
             .text(d => `[${d.index}]`);
+
+        // Inline stats overlay (top-left)
+        const prop = this.validateHeapProperty();
+        const stats = `len: ${this.data.length}  ${prop.type}`;
+        g.append('text')
+            .attr('class', 'viz-stats')
+            .attr('x', 0)
+            .attr('y', -6)
+            .attr('text-anchor', 'start')
+            .style('fill', 'var(--text-secondary)')
+            .style('font-size', '12px')
+            .text(stats);
     }
 
     getNodeColor(index) {

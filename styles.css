@@ -15,6 +15,8 @@
     --warning: #f59e0b;
     --code-bg: #1f2937;
     --code-text: #f9fafb;
+    /* Text color to use on accent-colored shapes */
+    --on-accent: #ffffff;
     --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
@@ -31,6 +33,8 @@
     --border: #374151;
     --code-bg: #1f2937;
     --code-text: #f9fafb;
+    /* Text color to use on accent-colored shapes in dark mode */
+    --on-accent: #ffffff;
     --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -1px rgb(0 0 0 / 0.2);
     /* Hint browsers to render form controls in dark mode */
     color-scheme: dark;

@@ -71,6 +71,21 @@ class HashTableVisualizer extends BaseVisualizer {
 
         const buckets = this.createBuckets(tableSize);
         this.createVisualization(g, buckets, innerWidth, tableSize);
+
+        // Inline stats overlay (top-left)
+        const totalItems = this.data.length;
+        const nonEmpty = buckets.filter(b => b.items.length > 0).length;
+        const collisions = buckets.reduce((acc, b) => acc + Math.max(0, b.items.length - 1), 0);
+        const loadFactor = (totalItems / tableSize).toFixed(2);
+        const stats = `buckets: ${tableSize}  items: ${totalItems}  load: ${loadFactor}  collisions: ${collisions}`;
+        g.append('text')
+            .attr('class', 'viz-stats')
+            .attr('x', 0)
+            .attr('y', -6)
+            .attr('text-anchor', 'start')
+            .style('fill', 'var(--text-secondary)')
+            .style('font-size', '12px')
+            .text(stats);
     }
 
     createBuckets(tableSize) {
@@ -175,7 +190,7 @@ class HashTableVisualizer extends BaseVisualizer {
             .attr('y', (this.bucketHeight - 10) / 2)
             .attr('dy', '0.35em')
             .attr('text-anchor', 'middle')
-            .style('fill', 'white')
+            .style('fill', 'var(--on-accent)')
             .style('font-size', '10px')
             .style('pointer-events', 'none')
             .text(d => d.key.length > 6 ? d.key.substring(0, 6) + '...' : d.key);

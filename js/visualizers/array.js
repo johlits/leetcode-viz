@@ -88,6 +88,17 @@ class ArrayVisualizer extends BaseVisualizer {
             .attr('y2', yScale(0))
             .attr('stroke', 'var(--text-secondary)')
             .attr('stroke-width', 1);
+
+        // Inline stats overlay (top-left)
+        const stats = `len: ${data.length}  min: ${minValue}  max: ${maxValue}`;
+        g.append('text')
+            .attr('class', 'viz-stats')
+            .attr('x', 0)
+            .attr('y', -6)
+            .attr('text-anchor', 'start')
+            .style('fill', 'var(--text-secondary)')
+            .style('font-size', '12px')
+            .text(stats);
     }
 
     update(newData) {
