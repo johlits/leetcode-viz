@@ -26,15 +26,9 @@
                 <div class="visualization-header">
                     <h2 id="visualization-title">Data Structure Visualization</h2>
                     <div class="visualization-controls">
-                        <button id="fullscreen-btn" class="btn compact" title="Toggle Fullscreen">
-                            <span class="icon">⛶</span>
-                        </button>
-                        <button id="screenshot-btn" class="btn compact" title="Take Screenshot">
-                            <span class="icon">📸</span>
-                        </button>
-                        <button id="help-btn" class="btn compact" title="Show Help">
-                            <span class="icon">❓</span>
-                        </button>
+                        <button id="fullscreen-btn" class="btn compact" title="Toggle Fullscreen">Fullscreen</button>
+                        <button id="screenshot-btn" class="btn compact" title="Take Screenshot">Screenshot</button>
+                        <button id="help-btn" class="btn compact" title="Show Help">Help</button>
                     </div>
                 </div>
                 <div id="visualization" class="visualization">
@@ -61,44 +55,41 @@
                             </label>
                         </div>
                         <div class="button-group">
-                            <button id="sample-array" class="btn compact" title="Load sample array data">
-                                <span class="icon">📊</span>
-                            </button>
-                            <button id="sample-tree" class="btn compact" title="Load sample tree data">
-                                <span class="icon">🌳</span>
-                            </button>
-                            <button id="sample-graph" class="btn compact" title="Load sample graph data">
-                                <span class="icon">🔗</span>
-                            </button>
-                            <button id="sample-linkedlist" class="btn compact" title="Load sample linked list data">
-                                <span class="icon">⛓️</span>
-                            </button>
-                            <button id="sample-heap" class="btn compact" title="Load sample heap data">
-                                <span class="icon">🔺</span>
-                            </button>
-                            <button id="sample-hashtable" class="btn compact" title="Load sample hash table data">
-                                <span class="icon">🗂️</span>
-                            </button>
-                            <button class="btn primary compact" id="run-btn" title="Run (Ctrl+Enter)">
-                                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                </svg>
-                            </button>
+                            <div class="dropdown" id="sample-dropdown">
+                                <button class="btn compact" id="sample-toggle" title="Load sample data">Samples</button>
+                                <div class="dropdown-menu" id="sample-menu" role="menu" aria-hidden="true">
+                                    <button type="button" class="dropdown-item" data-type="grid">Grid</button>
+                                    <button type="button" class="dropdown-item" data-type="array">Array</button>
+                                    <button type="button" class="dropdown-item" data-type="tree">Tree</button>
+                                    <button type="button" class="dropdown-item" data-type="graph">Graph</button>
+                                    <button type="button" class="dropdown-item" data-type="linkedlist">Linked List</button>
+                                    <button type="button" class="dropdown-item" data-type="heap">Heap</button>
+                                    <button type="button" class="dropdown-item" data-type="hashtable">Hash Table</button>
+                                </div>
+                            </div>
+                            <div class="dropdown" id="type-dropdown">
+                                <button class="btn compact" id="type-toggle" title="Type override">Type: Auto</button>
+                                <div class="dropdown-menu" id="type-menu" role="menu" aria-hidden="true">
+                                    <button type="button" class="dropdown-item" data-type="auto">Auto</button>
+                                    <button type="button" class="dropdown-item" data-type="grid">Grid</button>
+                                    <button type="button" class="dropdown-item" data-type="array">Array</button>
+                                    <button type="button" class="dropdown-item" data-type="tree">Tree</button>
+                                    <button type="button" class="dropdown-item" data-type="graph">Graph</button>
+                                    <button type="button" class="dropdown-item" data-type="linkedlist">Linked List</button>
+                                    <button type="button" class="dropdown-item" data-type="heap">Heap</button>
+                                    <button type="button" class="dropdown-item" data-type="hashtable">Hash Table</button>
+                                </div>
+                            </div>
+                            <button class="btn primary compact" id="run-btn" title="Run (Ctrl+Enter)">Run</button>
                         </div>
                     </div>
                     <div class="editor-container">
                         <div class="editor-header">
                             <span class="editor-title">Data Editor</span>
                             <div class="editor-controls">
-                                <button id="format-btn" class="btn compact" title="Format JSON (Ctrl+Shift+F)">
-                                    <span class="icon">🎨</span>
-                                </button>
-                                <button id="clear-btn" class="btn compact" title="Clear Editor">
-                                    <span class="icon">🗑️</span>
-                                </button>
-                                <button id="export-btn" class="btn compact" title="Export Data">
-                                    <span class="icon">💾</span>
-                                </button>
+                                <button id="format-btn" class="btn compact" title="Format JSON (Ctrl+Shift+F)">Format</button>
+                                <button id="clear-btn" class="btn compact" title="Clear Editor">Clear</button>
+                                <button id="export-btn" class="btn compact" title="Export Data">Export</button>
                             </div>
                         </div>
                         <pre id="data-content" contenteditable="true" spellcheck="false"></pre>

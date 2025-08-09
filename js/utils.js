@@ -61,7 +61,22 @@ function detectDataType(data) {
     if (Array.isArray(data)) {
         // Empty array
         if (data.length === 0) return 'array';
-        
+
+        // Grid detection: array of arrays with uniform row lengths OR array of strings of equal length
+        if (Array.isArray(data[0]) || typeof data[0] === 'string') {
+            const isArrayRows = data.every(r => Array.isArray(r));
+            const isStringRows = data.every(r => typeof r === 'string');
+            if (isArrayRows || isStringRows) {
+                const firstLen = isArrayRows ? data[0].length : data[0].length;
+                if (firstLen > 0 && data.every(r => r.length === firstLen)) {
+                    // Avoid conflict with hashtable (array of pairs) by requiring more than 2 columns or >2 rows
+                    if ((data.length > 2) || (firstLen > 2)) {
+                        return 'grid';
+                    }
+                }
+            }
+        }
+
         // Check if it's hash table data (array of key-value pairs)
         if (data.length > 0 && Array.isArray(data[0]) && data[0].length === 2) {
             // Verify all elements are key-value pairs
@@ -171,6 +186,27 @@ function validateDataStructure(data, type) {
         case 'array':
             if (!Array.isArray(data)) {
                 errors.push('Data must be an array');
+            }
+            break;
+        case 'grid':
+            if (!Array.isArray(data) || data.length === 0) {
+                errors.push('Grid must be a non-empty array');
+                break;
+            }
+            if (Array.isArray(data[0])) {
+                const cols = data[0].length;
+                if (cols === 0) { errors.push('Grid rows must not be empty'); break; }
+                if (!data.every(row => Array.isArray(row) && row.length === cols)) {
+                    errors.push('All grid rows must be arrays of equal length');
+                }
+            } else if (typeof data[0] === 'string') {
+                const cols = data[0].length;
+                if (cols === 0) { errors.push('Grid string rows must not be empty'); break; }
+                if (!data.every(row => typeof row === 'string' && row.length === cols)) {
+                    errors.push('All grid rows must be strings of equal length');
+                }
+            } else {
+                errors.push('Grid must be an array of arrays or an array of strings');
             }
             break;
             

@@ -97,7 +97,6 @@ class HashTableVisualizer {
             .attr('text-anchor', 'end')
             .style('fill', 'var(--text-secondary)')
             .style('font-size', '12px')
-            .style('font-weight', 'bold')
             .text(d => `[${d.index}]`);
 
         // Bucket containers
@@ -173,7 +172,6 @@ class HashTableVisualizer {
             .attr('text-anchor', 'middle')
             .style('fill', 'white')
             .style('font-size', '10px')
-            .style('font-weight', 'bold')
             .style('pointer-events', 'none')
             .text(d => d.key.length > 6 ? d.key.substring(0, 6) + '...' : d.key);
 
@@ -185,7 +183,6 @@ class HashTableVisualizer {
             .attr('dy', '0.35em')
             .style('fill', 'var(--error)')
             .style('font-size', '12px')
-            .style('font-weight', 'bold')
             .text(d => `⚠ ${d.items.length} collisions`);
 
         // Chain arrows for collisions

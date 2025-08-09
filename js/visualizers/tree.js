@@ -78,7 +78,6 @@ class TreeVisualizer {
             .attr('dy', '.35em')
             .attr('text-anchor', 'middle')
             .style('fill', 'white')
-            .style('font-weight', 'bold')
             .text(d => d.data.value);
 
         // Add title

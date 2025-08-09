@@ -102,7 +102,6 @@ class GraphVisualizer {
             .attr('dy', '.35em')
             .attr('text-anchor', 'middle')
             .style('fill', 'white')
-            .style('font-weight', 'bold')
             .text(d => d.name || d.id);
 
         // Add title

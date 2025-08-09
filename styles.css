@@ -32,6 +32,13 @@
     --code-bg: #1f2937;
     --code-text: #f9fafb;
     --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -1px rgb(0 0 0 / 0.2);
+    /* Hint browsers to render form controls in dark mode */
+    color-scheme: dark;
+}
+
+/* Light explicitly uses light scheme to avoid OS default conflicts */
+html:not([data-theme="dark"]) {
+    color-scheme: light;
 }
 
 * {
@@ -287,16 +294,137 @@ html, body {
 }
 
 .btn.compact {
-    padding: 4px 6px;
-    min-width: 28px;
-    height: 28px;
-    font-size: 16px;
+    padding: 6px 10px;
+    min-width: auto;
+    height: 30px;
+    font-size: 13px;
 }
 
 .btn.compact .icon {
     width: 16px;
     height: 16px;
     display: inline-block;
+}
+
+/* Make toolbar button group wrap when text labels are longer */
+.toolbar .button-group {
+    display: flex;
+    flex-wrap: wrap; /* allow multiple rows */
+    gap: 8px;
+}
+.toolbar .button-group > * {
+    flex: 0 0 auto; /* prevent items from stretching/wrapping */
+    white-space: nowrap; /* keep button text on one line */
+}
+
+/* Toolbar layout (no horizontal scrolling, allow wrapping) */
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: visible;
+}
+.file-input-container { flex: 0 0 auto; }
+
+/* Ensure visualization control buttons align nicely */
+.visualization-controls .btn.compact {
+    height: 30px;
+}
+
+/* Make Open File label look like compact button and same height */
+.file-input-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px; /* match .btn.compact */
+    padding: 6px 10px; /* match .btn.compact */
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.file-input-label:hover {
+    background: var(--bg-tertiary);
+}
+
+/* Ensure hidden native file input */
+.file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+}
+
+/* Make the type selector align in height with buttons */
+.type-select {
+    height: 30px;
+    padding: 4px 8px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+.type-select:hover { background-color: var(--bg-tertiary); }
+.type-select:focus { outline: none; box-shadow: 0 0 0 2px rgba(127, 127, 213, 0.25); }
+.type-select option { background-color: var(--bg-secondary); color: var(--text-primary); }
+
+/* Stronger overrides for Windows browsers that ignore option styling */
+[data-theme="dark"] .type-select,
+[data-theme="dark"] .type-select option {
+    background-color: #1f2937 !important; /* matches --bg-secondary */
+    color: #f9fafb !important;            /* matches --code-text */
+    border-color: #374151 !important;     /* matches --bg-tertiary */
+}
+
+/* Custom Dropdown (Samples) */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 160px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 6px;
+    z-index: 1000;
+    display: none;
+}
+
+.dropdown-menu.open { display: block; }
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 6px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.dropdown-item:hover {
+    background: var(--bg-tertiary);
 }
 
 .btn.primary {

@@ -5,14 +5,24 @@ import GraphVisualizer from './visualizers/graph.js';
 import LinkedListVisualizer from './visualizers/linkedlist.js';
 import HeapVisualizer from './visualizers/heap.js';
 import HashTableVisualizer from './visualizers/hashtable.js';
+import GridVisualizer from './visualizers/grid.js';
 
 class DataVisualizerApp {
     constructor() {
         this.editor = document.getElementById('data-content');
         this.visualizer = null;
         this.currentType = null;
+        this.forcedType = 'auto';
+        this.updateUrlDebounced = this.debounce(() => this.updateURLState(), 300);
         this.sampleData = {
             array: [5, 2, 8, 1, 9, 3, 7, 4, 6],
+            grid: [
+                [1, 2, 3, 4, 5],
+                [2, 3, 4, 5, 6],
+                [3, 4, 9, 6, 7],
+                [4, 5, 6, 7, 8],
+                [5, 6, 7, 8, 9]
+            ],
             tree: {
                 value: 1,
                 left: {
@@ -67,8 +77,21 @@ class DataVisualizerApp {
         // Set up event listeners
         this.setupEventListeners();
         
-        // Load default sample data
-        this.loadSampleData('array');
+        // Try to restore state from URL/hash; fallback to default sample
+        if (!this.loadFromURLState()) {
+            this.loadSampleData('array');
+        }
+        
+        // Apply saved type override if present
+        const savedType = localStorage.getItem('typeOverride');
+        if (savedType) {
+            this.forcedType = savedType;
+            const typeToggle = document.getElementById('type-toggle');
+            if (typeToggle) {
+                const label = this.forcedType.charAt(0).toUpperCase() + this.forcedType.slice(1);
+                typeToggle.textContent = `Type: ${label}`;
+            }
+        }
     }
 
     setupEventListeners() {
@@ -80,30 +103,50 @@ class DataVisualizerApp {
             e.target.value = '';
         });
 
-        // Sample data buttons
-        document.getElementById('sample-array').addEventListener('click', () => {
-            this.loadSampleData('array');
-        });
+        // Sample data custom dropdown
+        const sampleToggle = document.getElementById('sample-toggle');
+        const sampleMenu = document.getElementById('sample-menu');
+        if (sampleToggle && sampleMenu) {
+            const closeMenu = () => {
+                sampleMenu.classList.remove('open');
+                sampleMenu.setAttribute('aria-hidden', 'true');
+            };
+            const openMenu = () => {
+                sampleMenu.classList.add('open');
+                sampleMenu.setAttribute('aria-hidden', 'false');
+            };
+            const toggleMenu = () => {
+                if (sampleMenu.classList.contains('open')) closeMenu(); else openMenu();
+            };
 
-        document.getElementById('sample-tree').addEventListener('click', () => {
-            this.loadSampleData('tree');
-        });
+            sampleToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleMenu();
+            });
 
-        document.getElementById('sample-graph').addEventListener('click', () => {
-            this.loadSampleData('graph');
-        });
+            sampleMenu.addEventListener('click', (e) => {
+                const btn = e.target.closest('.dropdown-item');
+                if (!btn) return;
+                const value = btn.getAttribute('data-type');
+                if (value) {
+                    this.loadSampleData(value);
+                    closeMenu();
+                }
+            });
 
-        document.getElementById('sample-linkedlist').addEventListener('click', () => {
-            this.loadSampleData('linkedlist');
-        });
+            // Close on outside click
+            document.addEventListener('click', (e) => {
+                if (!sampleMenu.classList.contains('open')) return;
+                if (e.target === sampleMenu || e.target === sampleToggle) return;
+                if (sampleMenu.contains(e.target)) return;
+                closeMenu();
+            });
 
-        document.getElementById('sample-heap').addEventListener('click', () => {
-            this.loadSampleData('heap');
-        });
-
-        document.getElementById('sample-hashtable').addEventListener('click', () => {
-            this.loadSampleData('hashtable');
-        });
+            // Close on Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeMenu();
+            });
+        }
 
         // New UI controls
         document.getElementById('format-btn').addEventListener('click', () => {
@@ -129,6 +172,52 @@ class DataVisualizerApp {
         document.getElementById('help-btn').addEventListener('click', () => {
             this.showHelp();
         });
+
+        // Type override custom dropdown
+        const typeToggle = document.getElementById('type-toggle');
+        const typeMenu = document.getElementById('type-menu');
+        if (typeToggle && typeMenu) {
+            const closeType = () => {
+                typeMenu.classList.remove('open');
+                typeMenu.setAttribute('aria-hidden', 'true');
+            };
+            const openType = () => {
+                typeMenu.classList.add('open');
+                typeMenu.setAttribute('aria-hidden', 'false');
+            };
+            const toggleType = () => {
+                if (typeMenu.classList.contains('open')) closeType(); else openType();
+            };
+
+            typeToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleType();
+            });
+
+            typeMenu.addEventListener('click', (e) => {
+                const btn = e.target.closest('.dropdown-item');
+                if (!btn) return;
+                const value = btn.getAttribute('data-type') || 'auto';
+                this.forcedType = value;
+                localStorage.setItem('typeOverride', this.forcedType);
+                // Update toggle label
+                const label = this.forcedType.charAt(0).toUpperCase() + this.forcedType.slice(1);
+                typeToggle.textContent = `Type: ${label}`;
+                this.updateEditorStatus();
+                this.updateUrlDebounced();
+                closeType();
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!typeMenu.classList.contains('open')) return;
+                if (e.target === typeMenu || e.target === typeToggle) return;
+                if (typeMenu.contains(e.target)) return;
+                closeType();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeType();
+            });
+        }
 
         // Format JSON shortcut
         document.addEventListener('keydown', (e) => {
@@ -158,15 +247,28 @@ class DataVisualizerApp {
         // Handle editor changes with debounce
         this.editor.addEventListener('input', this.debounce(() => {
             this.updateEditorStatus();
+            this.updateUrlDebounced();
         }, 300));
 
         // Also listen for paste events
         this.editor.addEventListener('paste', () => {
-            setTimeout(() => this.updateEditorStatus(), 100);
+            setTimeout(() => {
+                this.updateEditorStatus();
+                this.updateUrlDebounced();
+            }, 100);
         });
 
         // Update status on load
         setTimeout(() => this.updateEditorStatus(), 100);
+
+        // Responsive resize handling for visualizations
+        const onResize = this.debounce(() => {
+            if (this.visualizer && typeof this.visualizer.resize === 'function') {
+                try { this.visualizer.resize(); } catch {}
+            }
+        }, 150);
+        window.addEventListener('resize', onResize);
+        window.addEventListener('orientationchange', onResize);
     }
 
     // Removed drag and drop related methods
@@ -209,7 +311,7 @@ class DataVisualizerApp {
             setTimeout(() => {
                 try {
                     const data = parseData(content);
-                    const type = detectDataType(data);
+                    const type = this.forcedType !== 'auto' ? this.forcedType : detectDataType(data);
                     
                     // Validate data
                     const validation = validateDataStructure(data, type);
@@ -221,6 +323,7 @@ class DataVisualizerApp {
                     
                     this.visualizeData(data, type);
                     this.showLoading(false);
+                    this.updateUrlDebounced();
                 } catch (error) {
                     console.error('Error visualizing data:', error);
                     this.showError('Error visualizing data: ' + error.message);
@@ -251,6 +354,9 @@ class DataVisualizerApp {
                 case 'array':
                     this.visualizer = new ArrayVisualizer('graph-container', data);
                     break;
+                case 'grid':
+                    this.visualizer = new GridVisualizer('graph-container', data);
+                    break;
                 case 'tree':
                     this.visualizer = new TreeVisualizer('graph-container', data);
                     break;
@@ -275,7 +381,8 @@ class DataVisualizerApp {
             
             // Update visualization title
             const title = document.getElementById('visualization-title');
-            title.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} Visualization`;
+            const forced = (this.forcedType !== 'auto');
+            title.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} Visualization${forced ? ' (Forced)' : ''}`;
             
         } catch (error) {
             console.error('Error creating visualizer:', error);
@@ -300,11 +407,13 @@ class DataVisualizerApp {
         
         try {
             const data = parseData(content);
-            const type = detectDataType(data);
+            const detected = detectDataType(data);
+            const type = this.forcedType !== 'auto' ? this.forcedType : detected;
             const validation = validateDataStructure(data, type);
             
             // Update data type
-            document.getElementById('data-type-indicator').textContent = type.charAt(0).toUpperCase() + type.slice(1);
+            const forced = (this.forcedType !== 'auto');
+            document.getElementById('data-type-indicator').textContent = `${type.charAt(0).toUpperCase() + type.slice(1)}${forced ? ' (Forced)' : ''}`;
             
             // Update validation status
             const statusEl = document.getElementById('validation-status');
@@ -360,7 +469,7 @@ class DataVisualizerApp {
         
         try {
             const data = parseData(content);
-            const type = detectDataType(data);
+            const type = this.forcedType !== 'auto' ? this.forcedType : detectDataType(data);
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -395,25 +504,31 @@ class DataVisualizerApp {
             return;
         }
         
-        // Create canvas and draw SVG
+        // Ensure SVG has explicit size
+        const cloned = svg.cloneNode(true);
+        cloned.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        const rect = svg.getBoundingClientRect();
+        const width = parseInt(svg.getAttribute('width') || rect.width || 800, 10);
+        const height = parseInt(svg.getAttribute('height') || rect.height || 600, 10);
+        cloned.setAttribute('width', width);
+        cloned.setAttribute('height', height);
+
+        // Serialize and draw to canvas
         const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext('2d');
-        const svgData = new XMLSerializer().serializeToString(svg);
+        const svgData = new XMLSerializer().serializeToString(cloned);
         const img = new Image();
-        
         img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
+            ctx.clearRect(0, 0, width, height);
             ctx.drawImage(img, 0, 0);
-            
-            // Download image
             const link = document.createElement('a');
             link.download = `visualization_${new Date().toISOString().slice(0, 10)}.png`;
-            link.href = canvas.toDataURL();
+            link.href = canvas.toDataURL('image/png');
             link.click();
         };
-        
-        img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
     }
     
     showHelp() {
@@ -527,6 +642,49 @@ class DataVisualizerApp {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    }
+
+    // --- URL State (hash-based) ---
+    updateURLState() {
+        try {
+            const content = (this.editor.textContent || '').trim();
+            const type = this.forcedType || 'auto';
+            const params = new URLSearchParams();
+            params.set('type', type);
+            if (content) params.set('data', content);
+            // Use hash to avoid server involvement
+            const newHash = '#' + params.toString();
+            if (location.hash !== newHash) {
+                history.replaceState(null, '', newHash);
+            }
+        } catch {}
+    }
+
+    loadFromURLState() {
+        try {
+            if (!location.hash || location.hash.length < 2) return false;
+            const raw = location.hash.slice(1);
+            const params = new URLSearchParams(raw);
+            const type = params.get('type');
+            const dataParam = params.get('data');
+            if (type) {
+                this.forcedType = type;
+                const typeToggle = document.getElementById('type-toggle');
+                if (typeToggle) {
+                    const label = this.forcedType.charAt(0).toUpperCase() + this.forcedType.slice(1);
+                    typeToggle.textContent = `Type: ${label}`;
+                }
+            }
+            if (dataParam) {
+                this.editor.textContent = dataParam;
+                // attempt visualize
+                this.visualizeCurrentData();
+                return true;
+            }
+            return false;
+        } catch {
+            return false;
+        }
     }
 }
 

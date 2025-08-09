@@ -169,7 +169,6 @@ class HeapVisualizer {
             .attr('dy', '0.35em')
             .attr('text-anchor', 'middle')
             .style('fill', 'white')
-            .style('font-weight', 'bold')
             .style('font-size', '14px')
             .style('pointer-events', 'none')
             .text(d => d.value);
